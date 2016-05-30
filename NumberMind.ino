@@ -13,11 +13,10 @@ int iNumInp[4];
 void setup()
 {
 
-  arduboy.start();
-  arduboy.setFrameRate(30);
+  arduboy.begin();
 
   // display title
-  arduboy.clearDisplay();
+  arduboy.clear();
   arduboy.setTextSize(2);
   arduboy.setCursor(23, 20);
   arduboy.print("ARDUBOY");
@@ -59,9 +58,8 @@ void loop()
     iDigitIndex = 0;
     iTryIndex = 0;
 
-    arduboy.clearDisplay();
-
     // right side info
+    arduboy.clear();
     arduboy.drawRect(75, 0, 53, 24, 1);
     arduboy.drawRect(75, 23, 53, 26, 1);
     arduboy.drawRect(75, 48, 53, 16, 1);
