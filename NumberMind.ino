@@ -223,7 +223,6 @@ boolean cmpNum(int iTry)
   if ( iTotAces == 4 ) {
     // won
     displayStat(iTry);
-    waitButtonPress();
     arduboy.fillRect(82, 24, 45, 24, 0);
     arduboy.setCursor(94, 32);
     arduboy.print("WON!");
@@ -233,7 +232,6 @@ boolean cmpNum(int iTry)
   if ( iTry == 6 ) {
     // lost
     displayStat(-1);
-    waitButtonPress();
     arduboy.fillRect(82, 24, 45, 24, 0);
     arduboy.setCursor(93, 27);
     arduboy.print("LOST");
