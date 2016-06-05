@@ -8,6 +8,17 @@ Arduboy arduboy;
 int iNumGen[4];
 int iNumInp[4];
 
+int iGameIndex = 0;
+int iTryIndex;
+int iDigitIndex;
+
+int iDpadDelay = 200;
+
+int iCursorX;
+int iCursorY;
+
+boolean bRun;
+
 // init
 
 void setup()
@@ -29,6 +40,8 @@ void setup()
 
   arduboy.initRandomSeed();
 
+  arduboy.clear();
+
 }
 
 // main loop
@@ -36,134 +49,104 @@ void setup()
 void loop()
 {
 
-  boolean bRun;
+  genNum();
 
-  int iDigitIndex;
-  int iTryIndex;
+  // default 1st number
+  for (int i = 0; i <= 3; i++) {
+    iNumInp[i] = i + 1;
+  }
 
-  int iCursorX = 90;
-  int iCursorY = 52;
+  bRun = true;
 
-  while (true) {
+  iDigitIndex = 0;
+  iTryIndex = 0;
 
-    genNum();
+  // clear screen except stats bar
+  arduboy.fillRect(0, 0, 72, 64, 0);
+  arduboy.fillRect(81, 0, 128, 64, 0);
+  // right side info
+  arduboy.drawRect(73, 0, 9, 64, 1);
+  arduboy.drawRect(81, 0, 47, 24, 1);
+  arduboy.drawRect(81, 23, 47, 26, 1);
+  arduboy.drawRect(81, 48, 47, 16, 1);
+  arduboy.setCursor(87, 3);
+  arduboy.print("Number");
+  arduboy.setCursor(93, 13);
+  arduboy.print("Mind");
+  arduboy.setCursor(87, 27);
+  arduboy.print("A=Ace");
+  arduboy.setCursor(87, 37);
+  arduboy.print("G=Good");
 
-    // default 1st number
-    for (int i = 0; i <= 3; i++) {
-      iNumInp[i] = i + 1;
+  while (bRun)
+  {
+
+    if (arduboy.pressed(RIGHT_BUTTON)) {
+      // move to right digit
+      iDigitIndex++;
+      if ( iDigitIndex > 3 ) {
+        iDigitIndex = 0;
+      }
+      delay(iDpadDelay);
     }
 
-    bRun = true;
-
-    iDigitIndex = 0;
-    iTryIndex = 0;
-
-    // right side info
-    arduboy.clear();
-    arduboy.drawRect(75, 0, 53, 24, 1);
-    arduboy.drawRect(75, 23, 53, 26, 1);
-    arduboy.drawRect(75, 48, 53, 16, 1);
-    arduboy.setCursor(85, 3);
-    arduboy.print("Number");
-    arduboy.setCursor(91, 13);
-    arduboy.print("Mind");
-    arduboy.setCursor(85, 27);
-    arduboy.print("A=Ace");
-    arduboy.setCursor(85, 37);
-    arduboy.print("G=Good");
-
-    while (bRun)
-    {
-
-      if (arduboy.pressed(RIGHT_BUTTON)) {
-        // move to right digit
-        iDigitIndex++;
-        if ( iDigitIndex > 3 ) {
-          iDigitIndex = 0;
-        }
+    if (arduboy.pressed(LEFT_BUTTON)) {
+      // move to left digit
+      iDigitIndex--;
+      if ( iDigitIndex < 0 ) {
+        iDigitIndex = 3;
       }
+      delay(iDpadDelay);
+    }
 
-      if (arduboy.pressed(LEFT_BUTTON)) {
-        // move to left digit
-        iDigitIndex--;
-        if ( iDigitIndex < 0 ) {
-          iDigitIndex = 3;
-        }
+    if (arduboy.pressed(UP_BUTTON)) {
+      // increase digit
+      iNumInp[iDigitIndex]++;
+      if ( iNumInp[iDigitIndex] > 9 ) {
+        iNumInp[iDigitIndex] = 0;
       }
+      delay(iDpadDelay);
+    }
 
-      if (arduboy.pressed(UP_BUTTON)) {
-        // increase digit
-        iNumInp[iDigitIndex]++;
-        if ( iNumInp[iDigitIndex] > 9 ) {
-          iNumInp[iDigitIndex] = 0;
-        }
+    if (arduboy.pressed(DOWN_BUTTON)) {
+      // decrease digit
+      iNumInp[iDigitIndex]--;
+      if ( iNumInp[iDigitIndex] < 0 ) {
+        iNumInp[iDigitIndex] = 9;
       }
+      delay(iDpadDelay);
+    }
 
-      if (arduboy.pressed(DOWN_BUTTON)) {
-        // decrease digit
-        iNumInp[iDigitIndex]--;
-        if ( iNumInp[iDigitIndex] < 0 ) {
-          iNumInp[iDigitIndex] = 9;
-        }
+    if (arduboy.pressed(A_BUTTON) || arduboy.pressed(B_BUTTON)) {
+      // compare number
+      if (cmpNum(iTryIndex)) {
+        // next try
+        iTryIndex++;
       }
-
-      if (arduboy.pressed(A_BUTTON) || arduboy.pressed(B_BUTTON)) {
-        // compare number
-        if (cmpNum(iTryIndex)) {
-          // next try
-          iTryIndex++;
-        }
-        else
-        {
-          // next game
-          bRun = false;
-        }
-      }
-
-      // input number
-      for (int i = 0; i <= 3; i++) {
-        arduboy.setCursor(iCursorX + (i * 7), iCursorY);
-        arduboy.print(iNumInp[i]);
-      }
-      arduboy.drawLine(iCursorX, iCursorY + 9, iCursorX + 25, iCursorY + 9, 0);
-      arduboy.drawLine(iCursorX + (iDigitIndex * 7), iCursorY + 9, iCursorX + 4 + (iDigitIndex * 7), iCursorY + 9, 1);
-      arduboy.display();
-
-      // delay for dpad buttons
-      delay(200);
-
-      if (!bRun) {
-        // game won or lost
-        waitButtonPress();
+      else
+      {
         // next game
-        break;
+        iGameIndex++;
+        bRun = false;
       }
-
     }
 
-  }
+    // input number
+    iCursorX = 92;
+    iCursorY = 52;
+    for (int i = 0; i <= 3; i++) {
+      arduboy.setCursor(iCursorX + (i * 7), iCursorY);
+      arduboy.print(iNumInp[i]);
+    }
+    arduboy.drawLine(iCursorX, iCursorY + 9, iCursorX + 25, iCursorY + 9, 0);
+    arduboy.drawLine(iCursorX + (iDigitIndex * 7), iCursorY + 9, iCursorX + 4 + (iDigitIndex * 7), iCursorY + 9, 1);
+    arduboy.display();
 
-}
+    if (!bRun) {
+      // game won or lost
+      waitButtonPress();
+    }
 
-// wait for button a or b press
-
-void waitButtonPress()
-{
-
-  while (arduboy.notPressed(A_BUTTON) && arduboy.notPressed(B_BUTTON)) {
-    // continue until buttons are pressed
-  }
-  waitButtonRelease();
-
-}
-
-// wait for button a or b release
-
-void waitButtonRelease()
-{
-
-  while (arduboy.pressed(A_BUTTON) || arduboy.pressed(B_BUTTON)) {
-    // continue until buttons are released
   }
 
 }
@@ -184,9 +167,6 @@ void genNum()
 
 boolean cmpNum(int iTry)
 {
-
-  int iCursorX = 90;
-  int iCursorY = 38;
 
   int iTotDigits = 0;
   int iTotAces = 0;
@@ -242,17 +222,23 @@ boolean cmpNum(int iTry)
 
   if ( iTotAces == 4 ) {
     // won
-    arduboy.fillRect(76, 24, 51, 24, 0);
-    arduboy.setCursor(92, 32);
+    displayStat(iTry);
+    waitButtonPress();
+    arduboy.fillRect(82, 24, 45, 24, 0);
+    arduboy.setCursor(94, 32);
     arduboy.print("WON!");
     return false;
   }
 
   if ( iTry == 6 ) {
     // lost
-    arduboy.fillRect(76, 24, 51, 24, 0);
-    arduboy.setCursor(91, 27);
+    displayStat(-1);
+    waitButtonPress();
+    arduboy.fillRect(82, 24, 45, 24, 0);
+    arduboy.setCursor(93, 27);
     arduboy.print("LOST");
+    iCursorX = 92;
+    iCursorY = 38;
     for (int i = 0; i <= 3; i++) {
       arduboy.setCursor(iCursorX + (i * 7), iCursorY);
       arduboy.print(iNumGen[i]);
@@ -279,3 +265,54 @@ boolean cmpNum(int iTry)
 
 }
 
+// display statistic
+
+void displayStat(int iTry)
+{
+
+  int iCursorY = 61 - (iGameIndex - (62 * (iGameIndex / 62)));
+
+  arduboy.drawLine(74, iCursorY, 80, iCursorY, 1);
+
+  iCursorY++;
+  
+  arduboy.drawLine(74, iCursorY, 80, iCursorY, 0);
+
+  switch (iTry) {
+    case -1:
+      break;
+    case 6:
+      arduboy.drawLine(77, iCursorY, 77, iCursorY, 1);
+      break;
+    case 5:
+      arduboy.drawLine(76, iCursorY, 78, iCursorY, 1);
+      break;
+    default:
+      arduboy.drawLine(75, iCursorY, 79, iCursorY, 1);
+      break;
+  }
+
+}
+
+// wait for button a or b press
+
+void waitButtonPress()
+{
+
+  while (arduboy.notPressed(A_BUTTON) && arduboy.notPressed(B_BUTTON)) {
+    // continue until buttons are pressed
+  }
+  waitButtonRelease();
+
+}
+
+// wait for button a or b release
+
+void waitButtonRelease()
+{
+
+  while (arduboy.pressed(A_BUTTON) || arduboy.pressed(B_BUTTON)) {
+    // continue until buttons are released
+  }
+
+}
